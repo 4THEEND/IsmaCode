@@ -1,0 +1,32 @@
+MAIN_SCOPE 0
+IMPORT import
+VAR var
+FUNCTION function
+RETURN return
+
+FOR for
+WHILE while
+TO to
+IN in
+
+IF if
+ELSE else
+ELIF elif
+
+COND_EQ ==
+COND_INF_EQ <=
+COND_SUP_EQ >=
+COND_DIFF !!
+
+EQ =
+QUO "
+QUO2 '
+L_ACC {
+R_ACC }
+L_PAR (
+R_PAR )
+COMMENT //
+SEPARATOR ,
+
+BOOl_TRUE true
+BOOl_FALSE false

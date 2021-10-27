@@ -1,0 +1,15 @@
+function coucou(uho, salut)
+{
+	for (i in salut to 7)
+	{
+		afficher(i)
+	}
+	salut = uho + 3
+	return (salut + 2) * 3
+}
+
+var ismama = "Hello World"
+afficher(ismama)
+// petit test trql trql quoi
+afficher("heyy")
+afficher(coucou(6, 3))
