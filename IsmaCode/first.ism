@@ -12,4 +12,6 @@ var ismama = "Hello World"
 afficher(ismama)
 // petit test trql trql quoi
 afficher("heyy")
+ismama = (coucou(3, 5) + 2) * 9
+afficher(ismama)
 afficher(coucou(6, 3))

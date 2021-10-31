@@ -141,8 +141,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Expression.cpp" />
     <ClCompile Include="IsmaCode.cpp" />
     <ClCompile Include="IsmObject.cpp" />
+    <ClCompile Include="IsmTree.cpp" />
     <ClCompile Include="Lexer.cpp" />
     <ClCompile Include="Logging.cpp" />
     <ClCompile Include="Parser.cpp" />
@@ -154,7 +156,9 @@
     <None Include="first.ism" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Expression.h" />
     <ClInclude Include="IsmObject.h" />
+    <ClInclude Include="IsmTree.h" />
     <ClInclude Include="Lexer.h" />
     <ClInclude Include="Logging.h" />
     <ClInclude Include="Parser.h" />

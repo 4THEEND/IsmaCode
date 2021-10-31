@@ -32,6 +32,16 @@
 #define FUNCTION_CALL_STATEMENT "FUNCTION_CALL"
 #define UNKNOWN_INSTRUCTION "UNKNOWN_INSTRUCTION"
 #define SEPARATOR_STATEMENT "SEPARATOR"
+#define POINT "POINT"
+
+#define LITTERAL "LITT"
+#define INTEGER "INT"
+#define FLOAT "FLOAT"
+
+#define PLUS_OP "PLUS"
+#define MINUS_OP "MINUS"
+#define MUL_OP "MUL"
+#define DIV_OP "DIV"
 
 
 namespace Log

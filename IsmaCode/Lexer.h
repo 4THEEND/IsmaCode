@@ -8,12 +8,12 @@
 #define TOKEN_FILE "Tokens"
 #define RESERVED 30
 
-typedef struct Instruction
+struct Instruction
 {
 	std::string identificator;
 	std::string line;
 	unsigned int n_line;
-} Instruction;
+};
 
 using SourceCodeInstructions = std::unordered_map<std::string, std::vector<Instruction>>;
 

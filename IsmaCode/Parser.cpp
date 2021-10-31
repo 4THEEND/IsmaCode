@@ -19,6 +19,7 @@ Parser::Parser(SourceCodeInstructions instructions, Tokens Tokens)
 
 bool Parser::ParseFunctions(std::vector<Instruction> SourceCode, bool EntryPoint)
 {
+	m_Variables = {};
 	int IndStart = 0;
 	EntryPoint ? IndStart = 0 : IndStart = 1;
 
@@ -75,7 +76,10 @@ bool Parser::ParseFunctions(std::vector<Instruction> SourceCode, bool EntryPoint
 			for (const std::string& variable : args_tempo)
 			{
 				if (ParseVariableName(variable))
+				{
 					args.emplace_back(variable);
+					m_Variables = args;
+				}
 				else
 				{
 					Log::Error("Bad argument variable name at line " + std::to_string(SourceCode[0].n_line));
@@ -84,13 +88,27 @@ bool Parser::ParseFunctions(std::vector<Instruction> SourceCode, bool EntryPoint
 			}
 		}
 	}
-	for (int i = 0; i < SourceCode.size(); i++)
-		std::cout << SourceCode[i].line << std::endl;
 
+	/*parse variables
+	functions storage
+	parse conditions
+	parse loops
+	expressions in parenthesis
+	Parse code and variables*/
+	for (unsigned int i = 0; i < SourceCode.size(); i++)
+	{
+		if (SourceCode[i].identificator == VAR_DECLARATOR)
+		{
+			if (!ParseVariables(SourceCode[i]))
+				return false;
+		}
+		else if(SourceCode[i].identificator == UNKNOWN_INSTRUCTION)
+		{
+			if (!ParseUnknow(SourceCode[i]))
+				return false;
+		}
+	}
 	return true;
-	//parse variables
-	//expressions in parenthesis
-	//Parse code and variables
 }
 
 std::string Parser::TrimString(std::string&& chars)
@@ -104,6 +122,16 @@ std::string Parser::TrimString(std::string&& chars)
 		return chars.substr(Dwhitespaces, Ewhitespaces - Dwhitespaces + 1);
 }
 
+bool Parser::ExamVariable(const std::string& supposed_name)
+{
+	for (const IsmObject& variable : m_Variables)
+	{
+		if (variable.m_name == supposed_name)
+			return true;
+	}
+	return false;
+}
+
 bool Parser::ParseVariableName(const std::string& variable)
 {
 	const char* line_remasterised = variable.c_str();
@@ -115,6 +143,201 @@ bool Parser::ParseVariableName(const std::string& variable)
 	return true;
 }
 
-void Parser::ParseVariables()
+bool Parser::ParseVariables(const Instruction& var_instruction)
 {
+	size_t pos_assignement = var_instruction.line.find(m_Tokens.TokenReversed[EQ_STATEMENT]);
+	if (pos_assignement == std::string::npos)
+	{
+		Log::Error("Variables must be initialised at line " + std::to_string(var_instruction.n_line));
+		return false;
+	}
+	size_t sizeVarDecl = m_Tokens.TokenReversed[VAR_DECLARATOR].size();
+	std::string var_name = TrimString(var_instruction.line.substr(sizeVarDecl + 1, pos_assignement - sizeVarDecl - 1));
+	if (var_name.empty())
+	{
+		Log::Error("Variable names must respect Camel case convention at line " + std::to_string(var_instruction.n_line));
+		return false;
+	}
+	std::string variable_content = TrimString(var_instruction.line.substr(pos_assignement + 1));
+	if (!ParseExpression(variable_content))
+	{
+		Log::Error("Bad variable content at line " + std::to_string(var_instruction.n_line));
+		return false;
+	}
+	//TODO parse this
+	m_Variables.emplace_back(var_name);
+	return true;
+}
+
+bool Parser::ParseFunctionCalls(const Instruction& var_instruction)
+{
+	//TODO parse this
+	return false;
+}
+
+bool Parser::ParseUnknow(const Instruction& var_instruction)
+{
+	size_t pos_assignement = var_instruction.line.find(m_Tokens.TokenReversed[EQ_STATEMENT]);
+	if (pos_assignement == std::string::npos)
+	{
+		Log::Error("Unknow instruction at line " + std::to_string(var_instruction.n_line));
+		return false;
+	}
+
+	std::string supposed_name = TrimString(var_instruction.line.substr(0, pos_assignement));
+	if (!ParseVariableName(supposed_name))
+	{
+		Log::Error("Bad variable name at line " + std::to_string(var_instruction.n_line));
+		return false;
+	}
+	
+	if (!ExamVariable(supposed_name))
+	{
+		Log::Error("Unwnown variable at line " + std::to_string(var_instruction.n_line));
+		return false;
+	}
+	std::string variable_content = TrimString(var_instruction.line.substr(pos_assignement + 1));
+	if (!ParseExpression(variable_content))
+	{
+		Log::Error("Bad variable assignation content at line " + std::to_string(var_instruction.n_line));
+		return false;
+	}
+	return true;
+	//TODO parse this
+}
+
+bool Parser::ParseExpression(const std::string& expression)
+{
+	bool isNumber = false;
+	bool isString = false;
+	bool FunctionCall = false;
+	std::string functionCall;
+	StringInfos variables;
+	int ParCompt = 0;
+	std::string numAdd{};
+
+	std::vector<std::vector<ExpressionDecomp>> infos(
+		expression.size(),
+		std::vector<ExpressionDecomp>(0)
+	);
+
+	for (const char character : expression)
+	{
+		auto character2 = std::string(1, character);
+		if (FunctionCall)
+		{
+			functionCall += character;
+		}
+		if (character2 == m_Tokens.TokenReversed[QUO2_STATEMENT] || character2 == m_Tokens.TokenReversed[QUO_STATEMENT])
+		{
+			if (!isString)
+			{
+				isString = true;
+				variables.isVariable = false;
+			}
+			else
+			{
+				isString = false;
+				infos[ParCompt].emplace_back(LITTERAL, variables.chain);
+				variables = {};
+			}
+		}
+		else if (isalpha(character))
+		{
+			variables.chain += character;
+		}
+		else if (isString && !variables.isVariable)
+		{
+			variables.chain += character;
+		}
+		else
+		{
+			if (isalnum(character) && !FunctionCall)
+			{
+				numAdd += character;
+				if (!isNumber)
+					isNumber = true;
+			}
+			else if (isNumber)
+			{
+				numAdd.find(m_Tokens.TokenReversed[POINT]) != std::string::npos ? infos[ParCompt].emplace_back(FLOAT, numAdd) : infos[ParCompt].emplace_back(INTEGER, numAdd);
+				numAdd.clear();
+				isNumber = false;
+			}
+
+			bool lastPar = false;
+			if (character2 == m_Tokens.TokenReversed[POINT])
+			{
+				if (isNumber)
+					numAdd += character2;
+				//TODO: members functions
+
+			}
+			else if (character2 == m_Tokens.TokenReversed[L_PAR_STATEMENT])
+			{
+				if (variables.chain.empty())
+				{
+					ParCompt++;
+					continue;
+				}
+				else
+				{
+					lastPar = true;
+				}
+			}
+			else if (character2 == m_Tokens.TokenReversed[R_PAR_STATEMENT])
+			{
+				if (FunctionCall)
+				{
+					infos[ParCompt].emplace_back(FUNCTION_CALL_STATEMENT, functionCall);
+					FunctionCall = false;
+				}
+				else
+				{
+					ParCompt--;
+					continue;
+				}
+			}
+			if (!variables.chain.empty())
+			{
+				if (lastPar)
+				{
+					functionCall = variables.chain + m_Tokens.TokenReversed[L_PAR_STATEMENT];
+					FunctionCall = true;
+				}
+				else
+				{
+					if (ExamVariable(variables.chain))
+					{
+						infos[ParCompt].emplace_back(VAR_DECLARATOR, variables.chain);
+					}
+					else
+						return false;
+				}
+				variables = {};
+			}
+			else if (character2 == m_Tokens.TokenReversed[PLUS_OP] || character2 == m_Tokens.TokenReversed[MINUS_OP] ||
+					character2 == m_Tokens.TokenReversed[MUL_OP] || character2 == m_Tokens.TokenReversed[DIV_OP])
+			{
+				infos[ParCompt].emplace_back(m_Tokens.Token[character2], character2);
+			}
+		}
+		std::cout << character2 << " " << variables.chain << std::endl;
+	}
+
+	if (ParCompt != 0)
+	{
+		Log::Error("Error in parenthesis count");
+		return false;
+	}
+	else if (isNumber)
+		numAdd.find(m_Tokens.TokenReversed[POINT]) != std::string::npos ? infos[ParCompt].emplace_back(FLOAT, numAdd) : infos[ParCompt].emplace_back(INTEGER, numAdd);
+	else if (!variables.chain.empty())
+	{
+		if (ExamVariable(variables.chain))
+			infos[ParCompt].emplace_back(VAR_DECLARATOR, variables.chain);
+		else
+			return false;
+	}
+	return true;
 }

@@ -27,6 +27,12 @@ L_PAR (
 R_PAR )
 COMMENT //
 SEPARATOR ,
+POINT .
+
+PLUS +
+MINUS -
+MUL *
+DIV /
 
 BOOl_TRUE true
 BOOl_FALSE false
