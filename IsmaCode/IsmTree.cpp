@@ -28,3 +28,10 @@ std::shared_ptr<Node> IsmTree::clear()
 	m_nodes = { std::shared_ptr<Node>(new Node({ ENTRY_POINT, { {"", ""} } })) };
 	return m_nodes[0];
 }
+
+#ifdef _DEBUG
+void IsmTree::print()
+{
+	//TODO make that
+}
+#endif 

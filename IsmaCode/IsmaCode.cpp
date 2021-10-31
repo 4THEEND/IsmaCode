@@ -5,7 +5,10 @@
 
 int main()
 {
-    
+#ifdef _DEBUG
+    std::cout << "debug" << std::endl;
+#endif 
+
     std::string entry{};
     while (true)
     {
