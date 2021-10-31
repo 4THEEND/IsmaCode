@@ -32,6 +32,6 @@ std::shared_ptr<Node> IsmTree::clear()
 #ifdef _DEBUG
 void IsmTree::print()
 {
-	//TODO make that
+	std::cout << "TODO" << std::endl;
 }
 #endif 
