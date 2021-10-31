@@ -95,6 +95,8 @@ bool Parser::ParseFunctions(std::vector<Instruction> SourceCode, bool EntryPoint
 	parse loops
 	expressions in parenthesis
 	Parse code and variables*/
+	
+	m_lastNode = m_SyntaxTree.clear();
 	for (unsigned int i = 0; i < SourceCode.size(); i++)
 	{
 		if (SourceCode[i].identificator == VAR_DECLARATOR)
@@ -159,12 +161,23 @@ bool Parser::ParseVariables(const Instruction& var_instruction)
 		return false;
 	}
 	std::string variable_content = TrimString(var_instruction.line.substr(pos_assignement + 1));
-	if (!ParseExpression(variable_content))
+	ReturnExpression parsed = ParseExpression(variable_content);
+	if (!parsed.isGood)
 	{
 		Log::Error("Bad variable content at line " + std::to_string(var_instruction.n_line));
 		return false;
 	}
-	//TODO parse this
+	else
+	{
+		AppendResult result =  m_SyntaxTree.append({ VAR_DECLARATOR, parsed.expression }, m_lastNode);
+		if (!result.isGood)
+		{
+			Log::Error("Error in tree appending");
+			return false;
+		}
+		else
+			m_lastNode = result.lastNode;
+	}
 	m_Variables.emplace_back(var_name);
 	return true;
 }
@@ -197,16 +210,27 @@ bool Parser::ParseUnknow(const Instruction& var_instruction)
 		return false;
 	}
 	std::string variable_content = TrimString(var_instruction.line.substr(pos_assignement + 1));
-	if (!ParseExpression(variable_content))
+	ReturnExpression parsed = ParseExpression(variable_content);
+	if (!parsed.isGood)
 	{
 		Log::Error("Bad variable assignation content at line " + std::to_string(var_instruction.n_line));
 		return false;
 	}
+	else
+	{
+		AppendResult result = m_SyntaxTree.append({ VAR_ASSIGN, parsed.expression }, m_lastNode);
+		if (!result.isGood)
+		{
+			Log::Error("Error in tree appending");
+			return false;
+		}
+		else
+			m_lastNode = result.lastNode;
+	}
 	return true;
-	//TODO parse this
 }
 
-bool Parser::ParseExpression(const std::string& expression)
+ReturnExpression Parser::ParseExpression(const std::string& expression)
 {
 	bool isNumber = false;
 	bool isString = false;
@@ -230,6 +254,7 @@ bool Parser::ParseExpression(const std::string& expression)
 		}
 		if (character2 == m_Tokens.TokenReversed[QUO2_STATEMENT] || character2 == m_Tokens.TokenReversed[QUO_STATEMENT])
 		{
+			//TODO difference between str with quo and quo2
 			if (!isString)
 			{
 				isString = true;
@@ -271,7 +296,6 @@ bool Parser::ParseExpression(const std::string& expression)
 				if (isNumber)
 					numAdd += character2;
 				//TODO: members functions
-
 			}
 			else if (character2 == m_Tokens.TokenReversed[L_PAR_STATEMENT])
 			{
@@ -312,7 +336,7 @@ bool Parser::ParseExpression(const std::string& expression)
 						infos[ParCompt].emplace_back(VAR_DECLARATOR, variables.chain);
 					}
 					else
-						return false;
+						return { false, {{}} };
 				}
 				variables = {};
 			}
@@ -322,13 +346,12 @@ bool Parser::ParseExpression(const std::string& expression)
 				infos[ParCompt].emplace_back(m_Tokens.Token[character2], character2);
 			}
 		}
-		std::cout << character2 << " " << variables.chain << std::endl;
 	}
 
 	if (ParCompt != 0)
 	{
 		Log::Error("Error in parenthesis count");
-		return false;
+		return { false, {{}} };
 	}
 	else if (isNumber)
 		numAdd.find(m_Tokens.TokenReversed[POINT]) != std::string::npos ? infos[ParCompt].emplace_back(FLOAT, numAdd) : infos[ParCompt].emplace_back(INTEGER, numAdd);
@@ -337,7 +360,7 @@ bool Parser::ParseExpression(const std::string& expression)
 		if (ExamVariable(variables.chain))
 			infos[ParCompt].emplace_back(VAR_DECLARATOR, variables.chain);
 		else
-			return false;
+			return { false, {{}} };
 	}
-	return true;
+	return { true, infos };
 }

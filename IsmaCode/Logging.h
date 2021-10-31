@@ -3,9 +3,11 @@
 #include <iostream>
 #include <string>
 
+#define ENTRY_POINT "EP"
 #define MAIN_SCOPE_DECLARATOR "MAIN_SCOPE"
 #define IMPORT_STATEMENT "IMPORT"
 #define VAR_DECLARATOR "VAR"
+#define VAR_ASSIGN "VAR_ASS"
 #define FUNCTION_DECLARATOR "FUNCTION"
 #define RETURN_DECLARATOR "RETURN"
 #define IF_DECLARATOR "IF"

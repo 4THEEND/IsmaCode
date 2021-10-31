@@ -4,7 +4,7 @@
 #include <string>
 #include "Lexer.h"
 #include "IsmObject.h"
-#include "Expression.h"
+#include "IsmTree.h"
 
 struct Tokens
 {
@@ -16,6 +16,12 @@ struct StringInfos
 {
 	bool isVariable = true;
 	std::string chain;
+};
+
+struct ReturnExpression
+{
+	bool isGood;
+	Expression expression;
 };
 
 class Parser
@@ -30,9 +36,11 @@ private:
 	bool ParseVariables(const Instruction& var_instruction);
 	bool ParseFunctionCalls(const Instruction& var_instruction);
 	bool ParseUnknow(const Instruction& var_instruction);
-	bool ParseExpression(const std::string& expression);
+	ReturnExpression ParseExpression(const std::string& expression);
 
 	std::vector<IsmObject> m_Variables;
+	std::shared_ptr<Node> m_lastNode;
+	IsmTree m_SyntaxTree;
 
 	Tokens m_Tokens;
 };
