@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <string>
+
 #include "Lexer.h"
 #include "IsmObject.h"
 #include "IsmTree.h"
@@ -24,6 +25,12 @@ struct ReturnExpression
 	Expression expression;
 };
 
+struct ReturnParsedFunctionCall
+{
+	bool isGood;
+	std::vector<Expression> expression;
+};
+
 class Parser
 {
 public:
@@ -34,15 +41,15 @@ private:
 	bool ParseFunctions(std::vector<Instruction> SourceCode, bool EntryPoint);
 	bool ParseVariableName(const std::string& variable);
 	bool ParseVariables(const Instruction& var_instruction);
-	bool ParseFunctionCalls(const Instruction& var_instruction);
+	ReturnParsedFunctionCall ParseFunctionCalls(const Instruction& var_instruction);
 	bool ParseLoops(const Instruction& var_instruction);
 	bool ParseUnknow(const Instruction& var_instruction);
-	ReturnExpression ParseExpression(const std::string& expression);
+	ReturnExpression ParseExpression(const std::string& expression, unsigned int line = 0);
 
+	std::vector<std::string> m_RelativeVariables;
 	std::vector<IsmObject> m_Variables;
 	std::shared_ptr<Node> m_lastNode;
 	IsmTree m_SyntaxTree;
-
 	Tokens m_Tokens;
 };
 

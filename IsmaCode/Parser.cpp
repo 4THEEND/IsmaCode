@@ -116,7 +116,7 @@ bool Parser::ParseFunctions(std::vector<Instruction> SourceCode, bool EntryPoint
 		}
 		else if (SourceCode[i].identificator == FUNCTION_CALL_STATEMENT)
 		{
-			if (!ParseFunctionCalls(SourceCode[i]))
+			if (!ParseFunctionCalls(SourceCode[i]).isGood)
 				return false;
 		}
 	}
@@ -139,6 +139,11 @@ bool Parser::ExamVariable(const std::string& supposed_name)
 	for (const IsmObject& variable : m_Variables)
 	{
 		if (variable.m_name == supposed_name)
+			return true;
+	}
+	for (const auto& variable : m_RelativeVariables)
+	{
+		if (variable == supposed_name)
 			return true;
 	}
 	return false;
@@ -192,15 +197,56 @@ bool Parser::ParseVariables(const Instruction& var_instruction)
 	return true;
 }
 
-bool Parser::ParseFunctionCalls(const Instruction& var_instruction)
+ReturnParsedFunctionCall Parser::ParseFunctionCalls(const Instruction& var_instruction)
 {
-	std::cout << "Function call:  " << var_instruction.line << std::endl;
+	unsigned int Dargspos = var_instruction.line.find(m_Tokens.TokenReversed[L_PAR_STATEMENT]);
+	unsigned int Fargspos = var_instruction.line.rfind(m_Tokens.TokenReversed[R_PAR_STATEMENT]);
+
+	std::string Arguments = TrimString(var_instruction.line.substr(Dargspos + 1, Fargspos - Dargspos - 1));
+	unsigned int ParCompt = 0;
+	std::vector<std::string> ArgumentsDecompose{};
+	std::string argument{};
+	for (const char character : Arguments)
+	{
+		std::string character2{ std::string(1, character) };
+		if (character2 == m_Tokens.TokenReversed[SEPARATOR_STATEMENT] && ParCompt == 0)
+		{
+			ArgumentsDecompose.push_back(TrimString(std::move(argument)));
+			argument.clear();
+			continue;
+		}
+		else if (character2 == m_Tokens.TokenReversed[L_PAR_STATEMENT])
+		{
+			ParCompt++;
+		}
+		else if (character2 == m_Tokens.TokenReversed[R_PAR_STATEMENT])
+		{
+			ParCompt--;
+		}
+		argument += character;
+	}
+	if (!argument.empty())
+		ArgumentsDecompose.push_back(TrimString(std::move(argument)));
+
+	std::vector<Expression> parsedArgsExpressions;
+	for (std::string& argument_ : ArgumentsDecompose)
+	{
+		ReturnExpression parsed = ParseExpression(argument_, var_instruction.n_line);
+		if (!parsed.isGood)
+		{
+			Log::Error("Error while parsing arguments at line " + std::to_string(var_instruction.n_line));
+			return { false, {} };
+		}
+		parsedArgsExpressions.push_back(parsed.expression);
+	}
 	//TODO parse this
-	return true;
+	return { true, parsedArgsExpressions };
 }
 
 bool Parser::ParseLoops(const Instruction& var_instruction)
 {
+	//Oversimplifing
+	m_RelativeVariables.push_back("i");
 	std::cout << "Loop:  " << var_instruction.line << std::endl;
 	//TODO: parse this
 	return true;
@@ -248,12 +294,14 @@ bool Parser::ParseUnknow(const Instruction& var_instruction)
 	return true;
 }
 
-ReturnExpression Parser::ParseExpression(const std::string& expression)
+ReturnExpression Parser::ParseExpression(const std::string& expression, unsigned int line)
 {
 	bool isNumber = false;
 	bool isString = false;
 	bool FunctionCall = false;
 	std::string functionCall;
+	int ParComptRemember = 0;
+	bool ParCompReSetted = false;
 	StringInfos variables;
 	int ParCompt = 0;
 	std::string numAdd{};
@@ -285,7 +333,7 @@ ReturnExpression Parser::ParseExpression(const std::string& expression)
 				variables = {};
 			}
 		}
-		else if (isalpha(character))
+		else if (isalpha(character) && !FunctionCall)
 		{
 			variables.chain += character;
 		}
@@ -317,9 +365,9 @@ ReturnExpression Parser::ParseExpression(const std::string& expression)
 			}
 			else if (character2 == m_Tokens.TokenReversed[L_PAR_STATEMENT])
 			{
+				ParCompt++;
 				if (variables.chain.empty())
 				{
-					ParCompt++;
 					continue;
 				}
 				else
@@ -329,14 +377,18 @@ ReturnExpression Parser::ParseExpression(const std::string& expression)
 			}
 			else if (character2 == m_Tokens.TokenReversed[R_PAR_STATEMENT])
 			{
-				if (FunctionCall)
+				ParCompt--;
+				if (FunctionCall && ParCompt == ParComptRemember)
 				{
-					infos[ParCompt].emplace_back(FUNCTION_CALL_STATEMENT, functionCall);
+					auto result = ParseFunctionCalls({ FUNCTION_CALL_STATEMENT , functionCall, line });
+					if (!result.isGood)
+						return { false, {{}} };
+					infos[ParCompt].emplace_back(FUNCTION_CALL_STATEMENT, functionCall, result.expression);
 					FunctionCall = false;
+					ParCompReSetted = false;
 				}
 				else
 				{
-					ParCompt--;
 					continue;
 				}
 			}
@@ -344,8 +396,13 @@ ReturnExpression Parser::ParseExpression(const std::string& expression)
 			{
 				if (lastPar)
 				{
-					functionCall = variables.chain + m_Tokens.TokenReversed[L_PAR_STATEMENT];
 					FunctionCall = true;
+					if (!ParCompReSetted)
+					{
+						ParComptRemember = ParCompt - 1;
+						ParCompReSetted = true;
+					}
+					functionCall = variables.chain + m_Tokens.TokenReversed[L_PAR_STATEMENT];
 				}
 				else
 				{

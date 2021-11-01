@@ -14,4 +14,4 @@ afficher(ismama)
 afficher("heyy")
 ismama = (coucou(3, 5) + 2) * 9
 afficher(ismama)
-afficher(coucou(6, 3))
+afficher(coucou(juure(7, 65), 3))

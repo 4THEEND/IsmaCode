@@ -26,8 +26,9 @@ public:
 	inline std::unordered_map<std::string, std::string>& getToken() { return m_Tokens; }
 	inline std::unordered_map<std::string, std::string>& getTokenReversed() { return m_TokensReversed; }
 private:	
+	friend extern class Parser;
 	SourceCodeInstructions m_FileLexed;
-	bool isFunctionCall(const std::string& line);
+	static bool isFunctionCall(const std::string& line);
 	static std::unordered_map<std::string, std::string> m_Tokens;
 	static std::unordered_map<std::string, std::string> m_TokensReversed;
 	static void getTokens();
