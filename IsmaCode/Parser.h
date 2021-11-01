@@ -35,6 +35,7 @@ private:
 	bool ParseVariableName(const std::string& variable);
 	bool ParseVariables(const Instruction& var_instruction);
 	bool ParseFunctionCalls(const Instruction& var_instruction);
+	bool ParseLoops(const Instruction& var_instruction);
 	bool ParseUnknow(const Instruction& var_instruction);
 	ReturnExpression ParseExpression(const std::string& expression);
 

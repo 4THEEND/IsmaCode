@@ -109,6 +109,16 @@ bool Parser::ParseFunctions(std::vector<Instruction> SourceCode, bool EntryPoint
 			if (!ParseUnknow(SourceCode[i]))
 				return false;
 		}
+		else if (SourceCode[i].identificator == WHILE_DECLARATOR || SourceCode[i].identificator == FOR_DECLARATOR)
+		{
+			if (!ParseLoops(SourceCode[i]))
+				return false;
+		}
+		else if (SourceCode[i].identificator == FUNCTION_CALL_STATEMENT)
+		{
+			if (!ParseFunctionCalls(SourceCode[i]))
+				return false;
+		}
 	}
 	return true;
 }
@@ -184,8 +194,16 @@ bool Parser::ParseVariables(const Instruction& var_instruction)
 
 bool Parser::ParseFunctionCalls(const Instruction& var_instruction)
 {
+	std::cout << "Function call:  " << var_instruction.line << std::endl;
 	//TODO parse this
-	return false;
+	return true;
+}
+
+bool Parser::ParseLoops(const Instruction& var_instruction)
+{
+	std::cout << "Loop:  " << var_instruction.line << std::endl;
+	//TODO: parse this
+	return true;
 }
 
 bool Parser::ParseUnknow(const Instruction& var_instruction)

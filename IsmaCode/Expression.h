@@ -7,6 +7,7 @@ struct ExpressionDecomp
 {
 	std::string type;
 	std::string instruction;
+	ExpressionDecomp* NestedExpression = nullptr;
 };
 
 class Expression
