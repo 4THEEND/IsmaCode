@@ -35,8 +35,8 @@ class Parser
 {
 public:
 	Parser(SourceCodeInstructions instructions, Tokens Tokens);
+	static std::string TrimString(std::string&& chars);
 private:
-	std::string TrimString(std::string&& chars);
 	bool ExamVariable(const std::string& supposed_name);
 	bool ParseFunctions(std::vector<Instruction> SourceCode, bool EntryPoint);
 	bool ParseVariableName(const std::string& variable);

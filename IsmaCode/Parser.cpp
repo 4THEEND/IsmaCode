@@ -247,7 +247,7 @@ bool Parser::ParseLoops(const Instruction& var_instruction)
 {
 	//Oversimplifing
 	m_RelativeVariables.push_back("i");
-	std::cout << "Loop:  " << var_instruction.line << std::endl;
+	std::cout << "Loop:  " << var_instruction.line << " " <<  var_instruction.identificator << std::endl;
 	//TODO: parse this
 	return true;
 }
@@ -335,6 +335,13 @@ ReturnExpression Parser::ParseExpression(const std::string& expression, unsigned
 		}
 		else if (isalpha(character) && !FunctionCall)
 		{
+			if (isNumber)
+			{
+				numAdd.find(m_Tokens.TokenReversed[POINT]) != std::string::npos ? infos[ParCompt].emplace_back(FLOAT, numAdd) : infos[ParCompt].emplace_back(INTEGER, numAdd);
+				infos[ParCompt].emplace_back(MUL_OP, m_Tokens.TokenReversed[MUL_OP]);
+				numAdd.clear();
+				isNumber = false;
+			}
 			variables.chain += character;
 		}
 		else if (isString && !variables.isVariable)
@@ -343,7 +350,7 @@ ReturnExpression Parser::ParseExpression(const std::string& expression, unsigned
 		}
 		else
 		{
-			if (isalnum(character) && !FunctionCall)
+			if (isdigit(character) && !FunctionCall)
 			{
 				numAdd += character;
 				if (!isNumber)
