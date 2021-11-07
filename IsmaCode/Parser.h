@@ -42,11 +42,12 @@ private:
 	bool ParseVariableName(const std::string& variable);
 	bool ParseVariables(const Instruction& var_instruction);
 	ReturnParsedFunctionCall ParseFunctionCalls(const Instruction& var_instruction);
-	bool ParseLoops(const Instruction& var_instruction);
+	bool ParseLoops(Instruction& var_instruction, const int accCount);
 	bool ParseUnknow(const Instruction& var_instruction);
+	bool ParseConditions(const std::string& instruction);
 	ReturnExpression ParseExpression(const std::string& expression, unsigned int line = 0);
 
-	std::vector<std::string> m_RelativeVariables;
+	std::vector<std::vector<IsmObject>> m_RelativeVariables;
 	std::vector<IsmObject> m_Variables;
 	std::shared_ptr<Node> m_lastNode;
 	IsmTree m_SyntaxTree;

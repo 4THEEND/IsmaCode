@@ -1,8 +1,13 @@
 function coucou(uho, salut)
 {
-	for (i in salut to 7)
+	for (i in salut to 7)           
 	{
 		afficher(i)
+	}
+	while (uho < 5)
+	{
+		afficher(uho)
+		uho = uho + 1
 	}
 	salut = uho + 3
 	return (salut + 2) * 3

@@ -97,6 +97,8 @@ bool Parser::ParseFunctions(std::vector<Instruction> SourceCode, bool EntryPoint
 	Parse code and variables*/
 	
 	m_lastNode = m_SyntaxTree.clear();
+	//Count first function braces
+	int accCount = -1;
 	for (unsigned int i = 0; i < SourceCode.size(); i++)
 	{
 		if (SourceCode[i].identificator == VAR_DECLARATOR)
@@ -111,13 +113,31 @@ bool Parser::ParseFunctions(std::vector<Instruction> SourceCode, bool EntryPoint
 		}
 		else if (SourceCode[i].identificator == WHILE_DECLARATOR || SourceCode[i].identificator == FOR_DECLARATOR)
 		{
-			if (!ParseLoops(SourceCode[i]))
+			if (m_RelativeVariables.size() == accCount)
+				m_RelativeVariables.push_back({});
+
+			if (!ParseLoops(SourceCode[i], accCount))
 				return false;
 		}
 		else if (SourceCode[i].identificator == FUNCTION_CALL_STATEMENT)
 		{
 			if (!ParseFunctionCalls(SourceCode[i]).isGood)
 				return false;
+		}
+		else if (SourceCode[i].identificator == L_ACC_DECLARATOR)
+		{
+			accCount++;
+		}
+		else if (SourceCode[i].identificator == R_ACC_DECLARATOR)
+		{
+			accCount--;
+			if (accCount >= 0)
+				m_RelativeVariables[accCount] = {};
+			else if (accCount < -1)
+			{
+				Log::Error("Invalid braces at line " + std::to_string(SourceCode[i].n_line));
+				return false;
+			}
 		}
 	}
 	return true;
@@ -141,9 +161,10 @@ bool Parser::ExamVariable(const std::string& supposed_name)
 		if (variable.m_name == supposed_name)
 			return true;
 	}
-	for (const auto& variable : m_RelativeVariables)
+	for (const std::vector<IsmObject>& temp_variables : m_RelativeVariables)
+	for (const IsmObject& variable : temp_variables)
 	{
-		if (variable == supposed_name)
+		if (variable.m_name == supposed_name)
 			return true;
 	}
 	return false;
@@ -243,11 +264,31 @@ ReturnParsedFunctionCall Parser::ParseFunctionCalls(const Instruction& var_instr
 	return { true, parsedArgsExpressions };
 }
 
-bool Parser::ParseLoops(const Instruction& var_instruction)
+bool Parser::ParseLoops(Instruction& var_instruction, const int accCount)
 {
-	//Oversimplifing
-	m_RelativeVariables.push_back("i");
-	std::cout << "Loop:  " << var_instruction.line << " " <<  var_instruction.identificator << std::endl;
+	var_instruction.line = TrimString(std::move(var_instruction.line));
+	std::size_t Sexpression = var_instruction.line.find(m_Tokens.TokenReversed[L_PAR_STATEMENT]);
+	std::size_t Eexpression = var_instruction.line.rfind(m_Tokens.TokenReversed[R_PAR_STATEMENT]);
+	if (Sexpression == std::string::npos || Eexpression == std::string::npos || Eexpression != var_instruction.line.length() - 1)
+	{
+		Log::Error("Error in loop expression at line " + std::to_string(var_instruction.n_line));
+		return false;
+	}
+	std::string loopExpression{ var_instruction.line.substr(Sexpression + 1, Eexpression - Sexpression - 1) };
+	if (var_instruction.identificator == WHILE_DECLARATOR)
+	{
+		if (!ParseConditions(loopExpression))
+		{
+			Log::Error("Error in loop expression at line " + std::to_string(var_instruction.n_line));
+			return false;
+		}
+	}
+	else
+	{
+		std::cout << "for: " << loopExpression << std::endl;
+		m_RelativeVariables[accCount].push_back({ "i" });
+	}
+
 	//TODO: parse this
 	return true;
 }
@@ -291,6 +332,12 @@ bool Parser::ParseUnknow(const Instruction& var_instruction)
 		else
 			m_lastNode = result.lastNode;
 	}
+	return true;
+}
+
+bool Parser::ParseConditions(const std::string& instruction)
+{
+	std::cout << instruction << std::endl;
 	return true;
 }
 
