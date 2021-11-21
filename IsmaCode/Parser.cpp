@@ -275,9 +275,11 @@ bool Parser::ParseLoops(Instruction& var_instruction, const int accCount)
 		return false;
 	}
 	std::string loopExpression{ var_instruction.line.substr(Sexpression + 1, Eexpression - Sexpression - 1) };
+	
 	if (var_instruction.identificator == WHILE_DECLARATOR)
 	{
-		if (!ParseConditions(loopExpression))
+		ReturnExpression result = ParseExpression(loopExpression, var_instruction.n_line, ParseType::Condition);
+		if (!result.isGood)
 		{
 			Log::Error("Error in loop expression at line " + std::to_string(var_instruction.n_line));
 			return false;
@@ -335,13 +337,13 @@ bool Parser::ParseUnknow(const Instruction& var_instruction)
 	return true;
 }
 
-bool Parser::ParseConditions(const std::string& instruction)
+bool Parser::ParseReturn(const Instruction& var_instruction)
 {
-	std::cout << instruction << std::endl;
-	return true;
+	//TODO
+	return false;
 }
 
-ReturnExpression Parser::ParseExpression(const std::string& expression, unsigned int line)
+ReturnExpression Parser::ParseExpression(const std::string& expression, unsigned int line, ParseType type)
 {
 	bool isNumber = false;
 	bool isString = false;
@@ -351,6 +353,8 @@ ReturnExpression Parser::ParseExpression(const std::string& expression, unsigned
 	bool ParCompReSetted = false;
 	StringInfos variables;
 	int ParCompt = 0;
+	std::string StringComp{};
+	bool Condition = false;
 	std::string numAdd{};
 
 	std::vector<std::vector<ExpressionDecomp>> infos(
@@ -397,6 +401,41 @@ ReturnExpression Parser::ParseExpression(const std::string& expression, unsigned
 		}
 		else
 		{
+			if (type == ParseType::Condition)
+			{
+				if (character2 == m_Tokens.TokenReversed[EQ_STATEMENT])
+				{
+					if (StringComp.size() >= 2)
+						return { false, {{}} };
+					else if (StringComp.empty())
+					{
+						StringComp = m_Tokens.TokenReversed[COND_EQ_STATEMENT];
+						Condition = true;
+					}
+					else if (StringComp.size() == 1)
+					{
+						if (StringComp == m_Tokens.TokenReversed[COND_INF_STATEMENT])
+							infos[ParCompt].emplace_back(COND_INF_EQ_STATEMENT, StringComp + character2);
+						else if (StringComp == m_Tokens.TokenReversed[COND_EQ_STATEMENT])
+							infos[ParCompt].emplace_back(COND_EQ_STATEMENT, StringComp + character2);
+						else if (StringComp == m_Tokens.TokenReversed[COND_SUP_STATEMENT])
+							infos[ParCompt].emplace_back(COND_SUP_EQ_STATEMENT, StringComp + character2);
+						else if (StringComp == m_Tokens.TokenReversed[COND_DIFF_STATEMENT])
+							infos[ParCompt].emplace_back(COND_DIFF_STATEMENT, StringComp + character2);
+						StringComp.clear();
+					}
+					std::cout << "ha " << StringComp << std::endl;
+				}
+				else if (character2 == m_Tokens.TokenReversed[COND_INF_STATEMENT] || character2 == m_Tokens.TokenReversed[COND_SUP_STATEMENT]
+					|| character2 == m_Tokens.TokenReversed[DIFF_STATEMENT])
+				{
+					if (!StringComp.empty())
+						return { false, {{}} };
+					StringComp += character2;
+					Condition = true;
+				}
+			}
+
 			if (isdigit(character) && !FunctionCall)
 			{
 				numAdd += character;
@@ -474,7 +513,19 @@ ReturnExpression Parser::ParseExpression(const std::string& expression, unsigned
 			{
 				infos[ParCompt].emplace_back(m_Tokens.Token[character2], character2);
 			}
+			if (type == ParseType::Condition)
+			{
+				if (!StringComp.empty() && !Condition)
+				{
+					if (m_Tokens.TokenReversed[StringComp] == DIFF_STATEMENT)
+						return { false, {{}} };
+					else
+						infos[ParCompt].emplace_back(m_Tokens.TokenReversed[StringComp], StringComp);
+					StringComp.clear();
+				}
+			}
 		}
+		Condition = false;
 	}
 
 	if (ParCompt != 0)
@@ -491,5 +542,7 @@ ReturnExpression Parser::ParseExpression(const std::string& expression, unsigned
 		else
 			return { false, {{}} };
 	}
+	else if (!StringComp.empty())
+		return { false, {{}} };
 	return { true, infos };
 }

@@ -13,11 +13,10 @@ IF if
 ELSE else
 ELIF elif
 
-COND_EQ ==
-COND_INF_EQ <=
-COND_SUP_EQ >=
-COND_DIFF !!
+COND_INF <
+COND_SUP >
 
+DIFF !
 EQ =
 QUO "
 QUO2 '
@@ -34,5 +33,5 @@ MINUS -
 MUL *
 DIV /
 
-BOOl_TRUE true
-BOOl_FALSE false
+BOOL_TRUE true
+BOOL_FALSE false

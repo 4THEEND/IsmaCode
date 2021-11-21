@@ -31,6 +31,11 @@ struct ReturnParsedFunctionCall
 	std::vector<Expression> expression;
 };
 
+enum class ParseType {
+	Normal,
+	Condition
+};
+
 class Parser
 {
 public:
@@ -44,8 +49,8 @@ private:
 	ReturnParsedFunctionCall ParseFunctionCalls(const Instruction& var_instruction);
 	bool ParseLoops(Instruction& var_instruction, const int accCount);
 	bool ParseUnknow(const Instruction& var_instruction);
-	bool ParseConditions(const std::string& instruction);
-	ReturnExpression ParseExpression(const std::string& expression, unsigned int line = 0);
+	bool ParseReturn(const Instruction& var_instruction);
+	ReturnExpression ParseExpression(const std::string& expression, unsigned int line = 0, ParseType type = ParseType::Normal);
 
 	std::vector<std::vector<IsmObject>> m_RelativeVariables;
 	std::vector<IsmObject> m_Variables;

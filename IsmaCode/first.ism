@@ -4,7 +4,7 @@ function coucou(uho, salut)
 	{
 		afficher(i)
 	}
-	while (uho < 5)
+	while (uho <= 5)
 	{
 		afficher(uho)
 		uho = uho + 1
